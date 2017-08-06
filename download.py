@@ -55,25 +55,46 @@ class InventoryPage:
         listings = list(map(Listing.from_json, json['listings']))
         return cls(pagination, listings)
 
-def download(username):
-    page = 1
-    rate_limit_remaining = 0
-    while page > 0:
+class DiscogsResponse:
+    def __init__(self, inventory_page, rate_limit_remaining):
+        self.inventory_page = inventory_page
+        self.rate_limit_remaining = rate_limit_remaining
+
+    @classmethod
+    def from_http_response(cls, response):
+        inventory_page = InventoryPage.from_json(response.json())
+        rate_limit_remaining = int(response.headers['X-Discogs-Ratelimit-Remaining'])
+        return cls(inventory_page, rate_limit_remaining)
+
+class DiscogsClient:
+    def __init__(self, username):
+        self._username = username
+
+    def download(self):
+        page = 1
+        rate_limit_remaining = 1
+
+        while page > 0:
+            self._throttle(rate_limit_remaining)
+
+            response = self._get_inventory(page)
+
+            for listing in response.inventory_page.listings:
+                print(listing)
+
+            page = response.inventory_page.pagination.next_page()
+            rate_limit_remaining = response.rate_limit_remaining
+
+    def _get_inventory(self, page):
+        print("Downloading page {}".format(page))
+        url = URL.format(self._username, page)
+        return DiscogsResponse.from_http_response(requests.get(url))
+
+    @staticmethod
+    def _throttle(rate_limit_remaining):
         if rate_limit_remaining == 0:
             print("Rate limit reached, wait for {} seconds".format(RATE_LIMIT_WAIT_SECS))
             time.sleep(RATE_LIMIT_WAIT_SECS)
-
-        print("Downloading page {}".format(page))
-
-        url = URL.format(username, page)
-        response = requests.get(url)
-        inventory_page = InventoryPage.from_json(response.json())
-
-        for listing in inventory_page.listings:
-            print(listing)
-
-        page = inventory_page.pagination.next_page()
-        rate_limit_remaining = int(response.headers['X-Discogs-Ratelimit-Remaining'])
 
 
 def _parse_args():
@@ -82,7 +103,8 @@ def _parse_args():
     
     return parser.parse_args()
 
+
 if __name__ == '__main__':
     arguments = _parse_args()
 
-    download(arguments.username)
+    DiscogsClient(arguments.username).download()
