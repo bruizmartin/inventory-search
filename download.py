@@ -12,15 +12,15 @@ import requests
 URL = 'https://api.discogs.com/users/{}/inventory?sort=listed&sort-order=asc&page={}&per_page=100'
 
 class Pagination:
-    def __init__(self, page: int, pages: int):
-        self.page = page
-        self.pages = pages
+    def __init__(self, current_page: int, total_pages: int):
+        self.current_page = current_page
+        self.total_pages = total_pages
 
     def from_json(json: dict):
         return Pagination(json['page'], json['pages'])
 
     def next_page(self):
-        return -1 if self.page >= self.pages else self.page + 1
+        return -1 if self.current_page >= self.total_pages else self.current_page + 1
 
 class Listing:
     def __init__(self, name: str, price: str, media: str, sleeve: str):
@@ -40,7 +40,7 @@ class Listing:
     def __str__(self):
         return "{}, {}, {}, {}".format(self.name, self.price, self.media, self.sleeve)
 
-class SearchResponse:
+class InventoryPage:
     def __init__(self, pagination: Pagination, listings: list):
         self.pagination = pagination
         self.listings = listings
@@ -48,22 +48,18 @@ class SearchResponse:
     def from_json(json: dict):
         pagination = Pagination.from_json(json['pagination'])
         listings = list(map(Listing.from_json, json['listings']))
-        return SearchResponse(pagination, listings)
+        return InventoryPage(pagination, listings)
 
-class Hunter:
-    def __init__(self, username: str):
-        self._username = username
+def download(username):
+    page = 1
+    while page > 0:
+        url = URL.format(username, page)
+        sr = InventoryPage.from_json(requests.get(url).json())
 
-    def search(self):
-        page = 1
-        while page > 0:
-            url = URL.format(self._username, page)
-            sr = SearchResponse.from_json(requests.get(url).json())
+        for listing in sr.listings:
+            print(listing)
 
-            for listing in sr.listings:
-                print(listing)
-
-            page = sr.pagination.next_page()
+        page = sr.pagination.next_page()
 
 
 def _parse_args():
@@ -75,4 +71,4 @@ def _parse_args():
 if __name__ == "__main__":
     arguments = _parse_args()
 
-    Hunter(arguments.username).search()
+    download(arguments.username)
