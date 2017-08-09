@@ -10,6 +10,7 @@ import argparse
 import requests
 import time
 
+
 URL = 'https://api.discogs.com/users/{}/inventory?sort=listed&sort-order=asc&page={}&per_page=100'
 RATE_LIMIT_WAIT_SECS = 70
 
