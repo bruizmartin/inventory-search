@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Discogs Search
+Discogs inventory download
 """
 
 __author__ = 'bruizmartin@gmail.com'
