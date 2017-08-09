@@ -71,29 +71,36 @@ class DiscogsClient:
         self._username = username
 
     def download(self):
+        file_name = '{}.txt'.format(self._username)
+        with open(file_name, 'w') as file:
+            self._download_to_file(file)
+
+    def _download_to_file(self, file):
         page = 1
-        rate_limit_remaining = 1
+        pages = '?'
+        rate_limit_remaining = 25
 
         while page > 0:
             self._throttle(rate_limit_remaining)
 
-            response = self._get_inventory(page)
+            response = self._get_inventory(page, pages)
 
             for listing in response.inventory_page.listings:
-                print(listing)
+                file.write('{}\n'.format(listing))
 
             page = response.inventory_page.pagination.next_page()
+            pages = response.inventory_page.pagination.total_pages
             rate_limit_remaining = response.rate_limit_remaining
 
-    def _get_inventory(self, page):
-        print("Downloading page {}".format(page))
+    def _get_inventory(self, page, pages):
+        print("Downloading page {}/{}".format(page, pages), end='\r')
         url = URL.format(self._username, page)
         return DiscogsResponse.from_http_response(requests.get(url))
 
     @staticmethod
     def _throttle(rate_limit_remaining):
-        if rate_limit_remaining == 0:
-            print("Rate limit reached, wait for {} seconds".format(RATE_LIMIT_WAIT_SECS))
+        if rate_limit_remaining == 1:
+            print("Rate limit reached, wait for {} seconds".format(RATE_LIMIT_WAIT_SECS), end='\r')
             time.sleep(RATE_LIMIT_WAIT_SECS)
 
 
