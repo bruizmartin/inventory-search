@@ -9,10 +9,12 @@ __author__ = 'bruizmartin@gmail.com'
 import argparse
 import requests
 import time
+import os
 
 
 URL = 'https://api.discogs.com/users/{}/inventory?sort=listed&sort-order=asc&page={}&per_page=100'
 RATE_LIMIT_WAIT_SECS = 70
+INVENTORIES_DIR = 'inventories'
 
 
 class Pagination:
@@ -77,7 +79,8 @@ class DiscogsClient:
         self._username = username
 
     def download(self):
-        file_name = '{}.txt'.format(self._username)
+        file_name = '{}/{}.txt'.format(INVENTORIES_DIR, self._username)
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
         with open(file_name, 'w') as file:
             self._download_to_file(file)
 
