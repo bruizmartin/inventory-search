@@ -13,6 +13,7 @@ import time
 URL = 'https://api.discogs.com/users/{}/inventory?sort=listed&sort-order=asc&page={}&per_page=100'
 RATE_LIMIT_WAIT_SECS = 70
 
+
 class Pagination:
     def __init__(self, current_page, total_pages):
         self.current_page = current_page
@@ -24,6 +25,7 @@ class Pagination:
 
     def next_page(self):
         return -1 if self.current_page >= self.total_pages else self.current_page + 1
+
 
 class Listing:
     def __init__(self, name, price, media, sleeve):
@@ -44,6 +46,7 @@ class Listing:
     def __str__(self):
         return '{}, {}, {}, {}'.format(self.name, self.price, self.media, self.sleeve)
 
+
 class InventoryPage:
     def __init__(self, pagination, listings):
         self.pagination = pagination
@@ -55,6 +58,7 @@ class InventoryPage:
         listings = list(map(Listing.from_json, json['listings']))
         return cls(pagination, listings)
 
+
 class DiscogsResponse:
     def __init__(self, inventory_page, rate_limit_remaining):
         self.inventory_page = inventory_page
@@ -65,6 +69,7 @@ class DiscogsResponse:
         inventory_page = InventoryPage.from_json(response.json())
         rate_limit_remaining = int(response.headers['X-Discogs-Ratelimit-Remaining'])
         return cls(inventory_page, rate_limit_remaining)
+
 
 class DiscogsClient:
     def __init__(self, username):
