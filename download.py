@@ -4,8 +4,6 @@
 Discogs inventory download
 """
 
-__author__ = 'bruizmartin@gmail.com'
-
 import argparse
 import requests
 import time
@@ -93,9 +91,7 @@ class DiscogsClient:
             self._throttle(rate_limit_remaining)
 
             response = self._get_inventory(page, pages)
-
-            for listing in response.inventory_page.listings:
-                file.write('{}\n'.format(listing))
+            self._store_inventory(file, response.inventory_page.listings)
 
             page = response.inventory_page.pagination.next_page()
             pages = response.inventory_page.pagination.total_pages
@@ -105,6 +101,10 @@ class DiscogsClient:
         print("Downloading page {}/{}".format(page, pages), end='\r')
         url = URL.format(self._username, page)
         return DiscogsResponse.from_http_response(requests.get(url))
+
+    def _store_inventory(self, file, listings):
+        for listing in listings:
+            file.write('{}\n'.format(listing))
 
     @staticmethod
     def _throttle(rate_limit_remaining):
